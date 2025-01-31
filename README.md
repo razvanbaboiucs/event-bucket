@@ -136,3 +136,9 @@ In this pattern, the load balancer is a client-side component that distributes i
 
 In this pattern, a service registry is a centralized database that stores information about available services.
 Clients can use the service registry to discover and locate the available services.
+
+## Flow diagrams
+
+The following flow diagrams illustrate the inisight mutation process:
+
+![Mutation flow](redis-lock-seq-diagram.png)
