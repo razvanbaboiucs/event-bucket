@@ -49,8 +49,10 @@ const isSlideoverOpen = ref(false)
 
 const newIdentification = ref({
   userId: '',
-  projectId: '27dd42b8-b6a3-4868-9f51-2fbd0ca00300'
+  projectId: getSelectedProjectId()
 })
+
+import { getSelectedProjectId, getApiKey } from '../utils/projectId'
 
 const addIdentification = async () => {
   try {
@@ -58,7 +60,7 @@ const addIdentification = async () => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-eb-api-key': 'i31mhdiWYlsEdYqMNu2Rn6NNciWN0QSufwsQP2ddJePEGlgBPBtZHGp3RYlyVfRy'
+        'x-eb-api-key': getApiKey()
       },
       body: JSON.stringify(newIdentification.value)
     })
@@ -89,7 +91,7 @@ const identifications = ref([])
 const fetchIdentifications = async () => {
   try {
     const response = await fetch(
-      'http://localhost:8060/event-manager/api/v1/identifications/projects/27dd42b8-b6a3-4868-9f51-2fbd0ca00300'
+      `http://localhost:8060/event-manager/api/v1/identifications/projects/${getSelectedProjectId()}`
     )
     const data = await response.json()
     identifications.value = data

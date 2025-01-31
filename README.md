@@ -66,6 +66,8 @@ The project is divided into the following modules:
     - account-api: provides shared DTOs and interfaces for the account related services
 - Tests:
     - performance-tests: tests the performance of the application
+- Demo:
+    - frontend: provides a web view for the application
 
 ## Relevant Distributed Systems patterns
 

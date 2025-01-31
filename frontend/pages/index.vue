@@ -73,6 +73,7 @@
 </template>
 
 <script setup>
+import { getSelectedProjectId, getApiKey } from '../utils/projectId'
 const eventIdFilter = ref('')
 const userIdFilter = ref('')
 const isSlideoverOpen = ref(false)
@@ -83,7 +84,7 @@ const newEvent = ref({
   title: '',
   description: '',
   userId: '',
-  projectId: '27dd42b8-b6a3-4868-9f51-2fbd0ca00300'
+  projectId: getSelectedProjectId()
 })
 
 const addEvent = async () => {
@@ -92,7 +93,7 @@ const addEvent = async () => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-eb-api-key': 'i31mhdiWYlsEdYqMNu2Rn6NNciWN0QSufwsQP2ddJePEGlgBPBtZHGp3RYlyVfRy'
+        'x-eb-api-key': getApiKey()
       },
       body: JSON.stringify(newEvent.value)
     })
@@ -146,7 +147,7 @@ const fetchEvents = async () => {
     if (userIdFilter.value) queryParams.append('userId', userIdFilter.value)
 
     const response = await fetch(
-      `http://localhost:8060/event-manager/api/v1/events/projects/27dd42b8-b6a3-4868-9f51-2fbd0ca00300/filter?${queryParams.toString()}`
+      `http://localhost:8060/event-manager/api/v1/events/projects/${getSelectedProjectId()}/filter?${queryParams.toString()}`
     )
     const data = await response.json()
     events.value = data

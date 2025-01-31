@@ -105,6 +105,8 @@ const selectedInsight = ref(null)
 const mutationType = ref('INCREMENT')
 const mutationValue = ref('')
 
+import { getSelectedProjectId, getApiKey } from '../utils/projectId'
+
 const handleRowClick = (row) => {
   selectedInsight.value = row
   isMutationSlideoverOpen.value = true
@@ -116,11 +118,11 @@ const sendMutation = async () => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-eb-api-key': 'i31mhdiWYlsEdYqMNu2Rn6NNciWN0QSufwsQP2ddJePEGlgBPBtZHGp3RYlyVfRy'
+        'x-eb-api-key': getApiKey()
       },
       body: JSON.stringify({
         id: selectedInsight.value.id,
-        projectId: '27dd42b8-b6a3-4868-9f51-2fbd0ca00300',
+        projectId: getSelectedProjectId(),
         mutationType: mutationType.value,
         mutationValue: parseFloat(mutationValue.value)
       })
@@ -142,7 +144,7 @@ const newInsight = ref({
   id: '',
   title: '',
   value: '',
-  projectId: '27dd42b8-b6a3-4868-9f51-2fbd0ca00300'
+  projectId: getSelectedProjectId()
 })
 
 const addInsight = async () => {
@@ -194,7 +196,7 @@ const insights = ref([])
 const fetchInsights = async () => {
   try {
     const response = await fetch(
-      'http://localhost:8060/event-manager/api/v1/insights/27dd42b8-b6a3-4868-9f51-2fbd0ca00300'
+      `http://localhost:8060/event-manager/api/v1/insights/${getSelectedProjectId()}`
     )
     const data = await response.json()
     insights.value = data

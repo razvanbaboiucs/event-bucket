@@ -22,6 +22,13 @@
     <div>
       <div class="flex justify-between items-center mb-6">
         <h1 class="text-2xl font-bold">Projects</h1>
+        <UButton
+          color="blue"
+          icon="i-heroicons-plus"
+          @click="isCreateProjectOpen = true"
+        >
+          Create Project
+        </UButton>
       </div>
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <div v-for="project in projects" :key="project.projectId" :class="['bg-white rounded-lg shadow p-6', { 'ring-2 ring-green-500': project.projectId === selectedProjectId }]">
@@ -60,12 +67,44 @@
       </div>
     </div>
   </div>
+
+  <USlideover
+    v-model="isCreateProjectOpen"
+    :ui="{ width: 'w-1/3' }"
+  >
+    <template #header>
+      <div class="text-xl font-bold">Create New Project</div>
+    </template>
+    <div class="p-4 space-y-4">
+      <UFormGroup label="Project Name">
+        <UInput v-model="newProjectName" placeholder="Enter project name" />
+      </UFormGroup>
+      <div class="flex justify-end gap-2">
+        <UButton
+          color="gray"
+          variant="soft"
+          @click="isCreateProjectOpen = false"
+        >
+          Cancel
+        </UButton>
+        <UButton
+          color="primary"
+          @click="createProject"
+        >
+          Create Project
+        </UButton>
+      </div>
+    </div>
+  </USlideover>
 </template>
 
 <script setup>
+import { getSelectedProjectId, setSelectedProjectId, setApiKey } from '../utils/projectId'
 const accountDetails = ref(null)
 const projects = ref([])
 const selectedProjectId = ref('')
+const isCreateProjectOpen = ref(false)
+const newProjectName = ref('')
 
 const fetchAccountDetails = async () => {
   try {
@@ -94,6 +133,29 @@ const fetchProjects = async () => {
   }
 }
 
+const createProject = async () => {
+  try {
+    const response = await fetch('http://localhost:8060/account-manager/api/v1/account/projects', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        projectName: newProjectName.value,
+        accountId: accountDetails.value?.id
+      })
+    })
+
+    if (response.ok) {
+      await fetchProjects()
+      newProjectName.value = ''
+      isCreateProjectOpen.value = false
+    }
+  } catch (error) {
+    console.error('Error creating project:', error)
+  }
+}
+
 const fetchProjectApiKey = async (projectId) => {
   try {
     const response = await fetch(`http://localhost:8060/account-manager/api/v1/account/projects/${projectId}/apiKey`)
@@ -113,17 +175,15 @@ const toggleProjectApiKey = async (project) => {
   project.isApiKeyVisible = !project.isApiKeyVisible
 }
 
-const selectProject = (projectId) => {
+const selectProject = async (projectId) => {
   selectedProjectId.value = projectId
-  document.cookie = `selectedProjectId=${projectId}; path=/; max-age=31536000`
+  setSelectedProjectId(projectId)
+  const apiKey = await fetchProjectApiKey(projectId)
+  setApiKey(apiKey)
 }
 
 const initializeSelectedProject = () => {
-  const cookies = document.cookie.split('; ')
-  const projectCookie = cookies.find(cookie => cookie.startsWith('selectedProjectId='))
-  if (projectCookie) {
-    selectedProjectId.value = projectCookie.split('=')[1]
-  }
+  selectedProjectId.value = getSelectedProjectId()
 }
 
 onMounted(() => {
