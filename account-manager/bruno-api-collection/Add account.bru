@@ -1,0 +1,18 @@
+meta {
+  name: Add account
+  type: http
+  seq: 2
+}
+
+post {
+  url: http://localhost:8060/account-manager/api/v1/account
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "email": "razvanbaboiu@yahoo.com",
+    "teamName": "BPS Hubs 2"
+  }
+}

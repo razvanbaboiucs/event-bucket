@@ -1,0 +1,20 @@
+meta {
+  name: Add insight
+  type: http
+  seq: 3
+}
+
+post {
+  url: http://localhost:8060/event-manager/api/v1/insights
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "projectId": "27dd42b8-b6a3-4868-9f51-2fbd0ca00300",
+    "id": "new-certifications",
+    "title": "Total of new certifications added",
+    "value": 0
+  }
+}

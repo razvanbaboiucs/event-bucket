@@ -1,0 +1,20 @@
+meta {
+  name: Get all events filtered
+  type: http
+  seq: 5
+}
+
+get {
+  url: http://localhost:8060/event-manager/api/v1/events/projects/:projectId/filter?userId=joe@gmail.com&id=payment
+  body: none
+  auth: none
+}
+
+params:query {
+  userId: joe@gmail.com
+  id: payment
+}
+
+params:path {
+  projectId: 27dd42b8-b6a3-4868-9f51-2fbd0ca00300
+}

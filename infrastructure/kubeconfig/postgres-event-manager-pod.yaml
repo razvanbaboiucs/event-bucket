@@ -1,0 +1,38 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  annotations:
+    kompose.cmd: kompose --file docker-compose-prod.yaml convert -o kubeconfig/
+    kompose.version: 1.35.0 (HEAD)
+  labels:
+    io.kompose.service: postgres-event-manager
+  name: postgres-event-manager
+spec:
+  containers:
+    - env:
+        - name: POSTGRES_DB
+          value: postgres
+        - name: POSTGRES_PASSWORD
+          value: password
+        - name: POSTGRES_USER
+          value: postgres
+      image: postgres:16
+      livenessProbe:
+        exec:
+          command:
+            - pg_isready -U postgres
+        failureThreshold: 5
+        periodSeconds: 5
+        timeoutSeconds: 5
+      name: postgres-event-manager
+      ports:
+        - containerPort: 5432
+          protocol: TCP
+      volumeMounts:
+        - mountPath: /var/lib/postgresql/data
+          name: pg-data-event-manager
+  restartPolicy: OnFailure
+  volumes:
+    - name: pg-data-event-manager
+      persistentVolumeClaim:
+        claimName: pg-data-event-manager

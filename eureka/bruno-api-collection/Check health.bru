@@ -1,0 +1,25 @@
+meta {
+  name: Check health
+  type: http
+  seq: 2
+}
+
+get {
+  url: http://localhost:8761/actuator/health
+  body: json
+  auth: none
+}
+
+headers {
+  x-eb-api-key: i31mhdiWYlsEdYqMNu2Rn6NNciWN0QSufwsQP2ddJePEGlgBPBtZHGp3RYlyVfRy
+}
+
+body:json {
+  {
+    "id": "payment-successful",
+    "projectId": "27dd42b8-b6a3-4868-9f51-2fbd0ca00300",
+    "userId": "joe@gmail.com",
+    "title": "New successful payment",
+    "description": "A new payment done for Ethiopia coffee"
+  }
+}

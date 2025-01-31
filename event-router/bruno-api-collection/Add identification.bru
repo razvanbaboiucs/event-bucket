@@ -1,0 +1,22 @@
+meta {
+  name: Add identification
+  type: http
+  seq: 3
+}
+
+post {
+  url: http://localhost:8060/event-router/api/v1/identifications
+  body: json
+  auth: none
+}
+
+headers {
+  x-eb-api-key: i31mhdiWYlsEdYqMNu2Rn6NNciWN0QSufwsQP2ddJePEGlgBPBtZHGp3RYlyVfRy
+}
+
+body:json {
+  {
+    "userId": "joe@gmail.com",
+    "projectId": "27dd42b8-b6a3-4868-9f51-2fbd0ca00300"
+  }
+}

@@ -1,0 +1,87 @@
+version: '3.8'
+
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq-event-bucket
+    hostname: rabbitmq
+    restart: unless-stopped
+    ports:
+      # AMQP protocol port
+      - "5672:5672"
+      # HTTP management UI
+      - "15672:15672"
+      # MQTT port (if needed)
+      - "1883:1883"
+      # MQTT over WebSocket port (if needed)
+      - "15675:15675"
+    environment:
+      - RABBITMQ_DEFAULT_USER=admin
+      - RABBITMQ_DEFAULT_PASS=password
+      # Enable management plugin
+      - RABBITMQ_MANAGEMENT_PORT=15672
+      # Enable MQTT plugin (if needed)
+      - RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS=-rabbitmq_mqtt.tcp_listeners "[1883]" -rabbitmq_mqtt.ws_tcp_listeners "[15675]"
+    volumes:
+      # Persist data
+      - rabbitmq_data:/var/lib/rabbitmq
+      # Persist logs
+      - rabbitmq_logs:/var/log/rabbitmq
+    networks:
+      - rabbitmq_network
+
+  postgres-event-manager:
+    image: postgres:16
+    container_name: postgres-event-bucket-event-manager
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=postgres
+    volumes:
+      - pg_data_event_manager:/var/lib/postgresql/data
+
+  postgres-account-manager:
+    image: postgres:16
+    container_name: postgres-event-bucket-account-manager
+    ports:
+      - "5433:5432"
+    environment:
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=postgres
+    volumes:
+      - pg_data_account_manager:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7.2-alpine
+    container_name: redis-event-bucket
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    networks:
+      - redis_network
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  rabbitmq_data:
+  rabbitmq_logs:
+  pg_data_event_manager:
+    driver: local
+  pg_data_account_manager:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  rabbitmq_network:
+    driver: bridge
+  redis_network:
+    driver: bridge

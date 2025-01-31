@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  annotations:
+    kompose.cmd: kompose --file docker-compose-prod.yaml convert -o kubeconfig/
+    kompose.version: 1.35.0 (HEAD)
+  labels:
+    io.kompose.service: cloud-gateway-server
+  name: cloud-gateway-server
+spec:
+  containers:
+    - env:
+        - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+          value: http://eureka-server:8761/eureka/
+      image: localhost/cloud-gateway-server:latest
+      livenessProbe:
+        exec:
+          command:
+            - curl
+            - -f
+            - http://localhost:8060/actuator/health
+        failureThreshold: 3
+        periodSeconds: 10
+        timeoutSeconds: 5
+      name: cloud-gateway-server
+      ports:
+        - containerPort: 8060
+          protocol: TCP
+  restartPolicy: OnFailure

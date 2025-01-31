@@ -1,0 +1,36 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  annotations:
+    kompose.cmd: kompose --file docker-compose-prod.yaml convert -o kubeconfig/
+    kompose.version: 1.35.0 (HEAD)
+  labels:
+    io.kompose.service: redis
+  name: redis
+spec:
+  containers:
+    - args:
+        - redis-server
+        - --appendonly
+        - "yes"
+      image: redis:7.2-alpine
+      livenessProbe:
+        exec:
+          command:
+            - redis-cli
+            - ping
+        failureThreshold: 5
+        periodSeconds: 5
+        timeoutSeconds: 3
+      name: redis
+      ports:
+        - containerPort: 6379
+          protocol: TCP
+      volumeMounts:
+        - mountPath: /data
+          name: redis-data
+  restartPolicy: OnFailure
+  volumes:
+    - name: redis-data
+      persistentVolumeClaim:
+        claimName: redis-data

@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    hostname: rabbitmq
+    restart: unless-stopped
+    ports:
+      # AMQP protocol port
+      - "5672:5672"
+      # HTTP management UI
+      - "15672:15672"
+      # MQTT port (if needed)
+      - "1883:1883"
+      # MQTT over WebSocket port (if needed)
+      - "15675:15675"
+    environment:
+      - RABBITMQ_DEFAULT_USER=admin
+      - RABBITMQ_DEFAULT_PASS=password
+      # Enable management plugin
+      - RABBITMQ_MANAGEMENT_PORT=15672
+      # Enable MQTT plugin (if needed)
+      - RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS=-rabbitmq_mqtt.tcp_listeners "[1883]" -rabbitmq_mqtt.ws_tcp_listeners "[15675]"
+    volumes:
+      # Persist data
+      - rabbitmq_data:/var/lib/rabbitmq
+      # Persist logs
+      - rabbitmq_logs:/var/log/rabbitmq
+    networks:
+      - rabbitmq_network
+
+volumes:
+  rabbitmq_data:
+  rabbitmq_logs:
+
+networks:
+  rabbitmq_network:
+    driver: bridge

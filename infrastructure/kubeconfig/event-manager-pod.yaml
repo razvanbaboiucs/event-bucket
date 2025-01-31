@@ -1,0 +1,43 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  annotations:
+    kompose.cmd: kompose --file docker-compose-prod.yaml convert -o kubeconfig/
+    kompose.version: 1.35.0 (HEAD)
+  labels:
+    io.kompose.service: event-manager
+  name: event-manager
+spec:
+  containers:
+    - env:
+        - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+          value: http://eureka-server:8761/eureka/
+        - name: SPRING_DATASOURCE_PASSWORD
+          value: password
+        - name: SPRING_DATASOURCE_URL
+          value: jdbc:postgresql://postgres-event-manager:5432/postgres
+        - name: SPRING_DATASOURCE_USERNAME
+          value: postgres
+        - name: SPRING_DATA_REDIS_HOST
+          value: redis
+        - name: SPRING_DATA_REDIS_PORT
+          value: "6379"
+        - name: SPRING_RABBITMQ_HOST
+          value: rabbitmq
+        - name: SPRING_RABBITMQ_PORT
+          value: "5672"
+      image: localhost/event-manager:latest
+      livenessProbe:
+        exec:
+          command:
+            - curl
+            - -f
+            - http://localhost:8080/actuator/health
+        failureThreshold: 3
+        periodSeconds: 10
+        timeoutSeconds: 5
+      name: event-manager
+      ports:
+        - containerPort: 8080
+          protocol: TCP
+  restartPolicy: OnFailure

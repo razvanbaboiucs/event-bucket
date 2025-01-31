@@ -1,0 +1,24 @@
+meta {
+  name: Add inisght mutation
+  type: http
+  seq: 4
+}
+
+post {
+  url: http://localhost:8060/event-router/api/v1/insights/mutation
+  body: json
+  auth: none
+}
+
+headers {
+  x-eb-api-key: i31mhdiWYlsEdYqMNu2Rn6NNciWN0QSufwsQP2ddJePEGlgBPBtZHGp3RYlyVfRy
+}
+
+body:json {
+  {
+    "id": "new-certifications",
+    "projectId": "27dd42b8-b6a3-4868-9f51-2fbd0ca00300",
+    "mutationType": "INCREMENT",
+    "mutationValue": 1
+  }
+}

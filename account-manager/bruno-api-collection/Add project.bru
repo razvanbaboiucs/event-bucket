@@ -1,0 +1,18 @@
+meta {
+  name: Add project
+  type: http
+  seq: 3
+}
+
+post {
+  url: http://localhost:8060/account-manager/api/v1/account/projects
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "accountId": 1,
+    "projectName": "CertHub3"
+  }
+}

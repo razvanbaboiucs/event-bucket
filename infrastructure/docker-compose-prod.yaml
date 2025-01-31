@@ -1,0 +1,218 @@
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq-event-bucket
+    hostname: rabbitmq
+    restart: unless-stopped
+    ports:
+      # AMQP protocol port
+      - "5672:5672"
+      # HTTP management UI
+      - "15672:15672"
+      # MQTT port (if needed)
+      - "1883:1883"
+      # MQTT over WebSocket port (if needed)
+      - "15675:15675"
+    environment:
+      - RABBITMQ_DEFAULT_USER=admin
+      - RABBITMQ_DEFAULT_PASS=password
+      # Enable management plugin
+      - RABBITMQ_MANAGEMENT_PORT=15672
+      # Enable MQTT plugin (if needed)
+      - RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS=-rabbitmq_mqtt.tcp_listeners "[1883]" -rabbitmq_mqtt.ws_tcp_listeners "[15675]"
+    volumes:
+      # Persist data
+      - rabbitmq_data:/var/lib/rabbitmq
+      # Persist logs
+      - rabbitmq_logs:/var/log/rabbitmq
+    networks:
+      - event_bucket_network
+
+  postgres-event-manager:
+    image: postgres:16
+    container_name: postgres-event-manager
+    restart: on-failure
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    environment:
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=postgres
+    volumes:
+      - pg_data_event_manager:/var/lib/postgresql/data
+    networks:
+      - event_bucket_network
+
+  postgres-account-manager:
+    image: postgres:16
+    container_name: postgres-account-manager
+    restart: on-failure
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    environment:
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=postgres
+    volumes:
+      - pg_data_account_manager:/var/lib/postgresql/data
+    networks:
+      - event_bucket_network
+
+  redis:
+    image: redis:7.2-alpine
+    container_name: redis
+    restart: on-failure
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    networks:
+      - event_bucket_network
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  eureka-server:
+    image: localhost/eureka-server:latest
+    container_name: eureka-server
+    restart: on-failure
+    ports:
+      - "8761:8761"
+    networks:
+      - event_bucket_network
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8761/actuator/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  cloud-gateway-server:
+    image: localhost/cloud-gateway-server:latest
+    container_name: cloud-gateway-server
+    restart: on-failure
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+    ports:
+      - "8060:8060"
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+    networks:
+      - event_bucket_network
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8060/actuator/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  event-router:
+    image: localhost/event-router:latest
+    container_name: event-router-service
+    restart: on-failure
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      cloud-gateway-server:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_started
+    ports:
+      - "8081:8081"
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+      - SPRING_RABBITMQ_HOST=rabbitmq
+      - SPRING_RABBITMQ_PORT=5672
+      - SPRING_DATA_REDIS_HOST=redis
+      - SPRING_DATA_REDIS_PORT=6379
+    networks:
+      - event_bucket_network
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8081/actuator/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  event-manager:
+    image: localhost/event-manager:latest
+    container_name: event-manager
+    restart: on-failure
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      postgres-event-manager:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_started
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-event-manager:5432/postgres
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=password
+      - SPRING_DATA_REDIS_HOST=redis
+      - SPRING_DATA_REDIS_PORT=6379
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+      - SPRING_RABBITMQ_HOST=rabbitmq
+      - SPRING_RABBITMQ_PORT=5672
+    networks:
+      - event_bucket_network
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/actuator/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  account-manager:
+    image: localhost/account-manager:latest
+    container_name: account-manager
+    restart: on-failure
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      postgres-account-manager:
+        condition: service_healthy
+    ports:
+      - "8082:8082"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-account-manager:5432/postgres
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=password
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+    networks:
+      - event_bucket_network
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8082/actuator/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  rabbitmq_data:
+  rabbitmq_logs:
+  pg_data_event_manager:
+    driver: local
+  pg_data_account_manager:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  event_bucket_network:
+    driver: bridge
